@@ -1,0 +1,27 @@
+name: "File Update Action"
+description: "Append or update content in a file and push changes"
+author: "Rana718"
+inputs:
+  file-name:
+    description: "The file to update (e.g., README.md)"
+    required: true
+  content:
+    description: "Content to add to the file"
+    required: true
+  commit-message:
+    description: "Commit message for the update"
+    required: false
+    default: "chore: update file"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Update file
+      shell: bash
+      run: |
+        echo "${{ inputs.content }}" >> "${{ inputs.file-name }}"
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        git add "${{ inputs.file-name }}"
+        git commit -m "${{ inputs.commit-message }}" || echo "No changes to commit"
+        git push
