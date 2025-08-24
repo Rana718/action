@@ -1,13 +1,18 @@
 name: "File Update Action"
 description: "Append or update content in a file and push changes"
 author: "Rana718"
+
 inputs:
+  mode:
+    description: "Choose 'check' to validate, or 'commit' to update file"
+    required: true
+    default: "commit"
   file-name:
     description: "The file to update (e.g., README.md)"
-    required: true
+    required: false
   content:
-    description: "Content to add to the file"
-    required: true
+    description: "Content to add to the file (only used in commit mode)"
+    required: false
   commit-message:
     description: "Commit message for the update"
     required: false
@@ -16,9 +21,21 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Update file
+    - name: Check conditions
+      if: ${{ inputs.mode == 'check' }}
       shell: bash
       run: |
+        if [ "${GITHUB_ACTOR}" = "github-actions[bot]" ] || \
+           [ "$(jq -r '.head_commit.committer.name' $GITHUB_EVENT_PATH)" = "GitHub" ]; then
+          echo "Skipping: Triggered by bot or GitHub UI"
+          exit 1
+        
+        fi
+
+    - name: Update file and commit
+      if: ${{ inputs.mode == 'commit' }}
+      shell: bash
+      run: 
         echo "${{ inputs.content }}" >> "${{ inputs.file-name }}"
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
